@@ -1,0 +1,17 @@
+server {
+    listen ${PORT};
+    listen [::]:${PORT};
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location ~* \.(jpg|jpeg|png|gif|svg|webp|pdf|css|js)$ {
+        expires 7d;
+        add_header Cache-Control "public, immutable";
+    }
+}
