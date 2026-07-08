@@ -251,6 +251,96 @@
     background: #ecebe6;
     color: #6b6b6b;
   }
+
+  /* Cross-sell: Maak je aankoop compleet */
+  .card .cross-sell {
+    background: var(--bg-warm);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+  }
+  .card .cs-title {
+    font-size: .78rem;
+    font-weight: 600;
+    color: var(--ink);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    margin-bottom: 10px;
+  }
+  .card .cs-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .card .cs-item {
+    display: grid;
+    grid-template-columns: 44px 1fr auto;
+    gap: 10px;
+    align-items: center;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 10px;
+    transition: border-color .2s;
+  }
+  .card .cs-item:hover {
+    border-color: var(--gold);
+  }
+  .card .cs-thumb {
+    width: 44px; height: 44px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .card .cs-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .card .cs-fallback { width: 100%; height: 100%; display: none; }
+  .card .cs-fallback svg { width: 100%; height: 100%; }
+  .card .cs-info { min-width: 0; }
+  .card .cs-name {
+    font-size: .8rem;
+    font-weight: 500;
+    line-height: 1.3;
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .card .cs-price {
+    font-size: .78rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin-top: 2px;
+  }
+  .card .cs-was {
+    color: var(--ink-soft);
+    text-decoration: line-through;
+    font-weight: 400;
+    margin-left: 4px;
+  }
+  .card .cs-add {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    background: var(--white);
+    font-size: 1.1rem;
+    font-weight: 400;
+    color: var(--ink);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .2s, color .2s, border-color .2s;
+  }
+  .card .cs-add:hover {
+    background: var(--gold);
+    color: var(--white);
+    border-color: var(--gold);
+  }
   .card .prod-specs { border-top: 1px solid var(--line); padding-top: 12px; margin-bottom: 14px; }
   .card .prod-specs summary {
     cursor: pointer; list-style: none; user-select: none;
@@ -1124,7 +1214,11 @@ const PRODUCTS = [
   { id:14, cat:'zonwering', catLabel:'AJP plissé', name:'Fakro AJP Plissérolgordijn 66×118', desc:'Lichtdoorlatend plisségordijn voor zachte schaduw en privacy. Strak en eenvoudig in bediening.', price:79, was:89, art:'plisse', tag:'Aanbieding', img:'ajp-plisse-66x118.jpg', specs:[['Type','AJP — plissérolgordijn'],['Lichtdoorlating','Variabel — zachte schaduw mogelijk'],['Bediening','Top-down systeem met onder- en bovenlat'],['Voordeel','Decoratief, zorgt voor privacy, beschermt tegen UV'],['Vergrendelbaar','In elke positie te fixeren']] },
   { id:15, cat:'platdak', catLabel:'DXF · vast', name:'Fakro DXF Plat-dakraam 60×60 (vast)', desc:'Niet-openend plat-dakraam met vlakke glasunit. Brengt daglicht in donkere ruimtes zonder ventilatiefunctie. Voor platte daken vanaf 2°.', price:649, was:null, art:'platdak_vlak', tag:'Daglicht', img:'dxf-60x60.jpg', specs:[['Type','DXF — vast (niet-openend)'],['Glasunit','DU6 — drievoudige beglazing, krypton'],['U-waarde','Uw circa 0,64 W/m²K — passief geschikt'],['Materiaal','Meerkamer PVC, gevuld met isolatiemateriaal'],['Kleur binnen','Wit (RAL 9010)'],['Dakhelling','Geschikt voor 2°–15°'],['Toepassing','Ruimtes zonder ventilatiebehoefte; trappenhuis, gang, badkamer met aparte afzuiging'],['Optie','Op XRD-sokkel (15 cm) plaatsbaar voor extra hoogte'],['Garantie','10 jaar fabrieksgarantie']] },
   { id:16, cat:'platdak', catLabel:'DMF · handbediend', name:'Fakro DMF Plat-dakraam 90×90 (handbediend)', desc:'Handbediend plat-dakraam met meegeleverde ZSD-bedieningsstang. Vleugel kantelt 30 cm voor goede ventilatie. Het meest gekozen plat-dakraam.', price:1149, was:null, art:'platdak_vlak', tag:'Populair', img:'dmf-90x90.jpg', specs:[['Type','DMF — handbediend met stang'],['Glasunit','DU6 — drievoudige beglazing, krypton'],['U-waarde','Uw circa 0,64 W/m²K'],['Vleugel-kanteling','30 cm — uitstekende ventilatie'],['Bediening','Inbegrepen ZSD-bedieningsstang'],['Materiaal','Meerkamer PVC met isolatievulling'],['Veiligheid','Optioneel verkrijgbaar in P2 inbraakwerende uitvoering'],['Dakhelling','Geschikt voor 2°–15°'],['Onderscheiding','RedDot Design Award winnaar (type F)'],['Garantie','10 jaar fabrieksgarantie']] },
-  { id:17, cat:'platdak', catLabel:'DEC · elektrisch + koepel', name:'Fakro DEC Plat-dakraam 100×100 met koepel', desc:'Elektrisch openend plat-dakraam met polycarbonaat koepel, bediend via draadloze Z-Wave afstandsbediening. Voor het allerbeste daglicht én comfort.', price:2149, was:null, art:'platdak_koepel', tag:'Premium', img:'dec-100x100.jpg', specs:[['Type','DEC — elektrisch (Z-Wave) met koepel'],['Koepel','Slagvast polycarbonaat (transparant of opaak)'],['Glasunit','U8(VSG) passief — viervoudig'],['U-waarde','U = 0,55 W/m²K voor 120×120 (compleet met koepel)'],['Vleugel-kanteling','15 cm — automatische ventilatie'],['Bediening','Draadloze Z-Wave afstandsbediening (inbegrepen)'],['Dakhelling','Geschikt voor 0°–15° (volledig plat dak mogelijk)'],['Veiligheid','Hoogste slagvastheidsklasse SB 1200 (EN 1873)'],['Optie','Z-Wave buitenzonwering AMZ/C los verkrijgbaar'],['Garantie','10 jaar fabrieksgarantie']] }
+  { id:17, cat:'platdak', catLabel:'DEC · elektrisch + koepel', name:'Fakro DEC Plat-dakraam 100×100 met koepel', desc:'Elektrisch openend plat-dakraam met polycarbonaat koepel, bediend via draadloze Z-Wave afstandsbediening. Voor het allerbeste daglicht én comfort.', price:2149, was:null, art:'platdak_koepel', tag:'Premium', img:'dec-100x100.jpg', specs:[['Type','DEC — elektrisch (Z-Wave) met koepel'],['Koepel','Slagvast polycarbonaat (transparant of opaak)'],['Glasunit','U8(VSG) passief — viervoudig'],['U-waarde','U = 0,55 W/m²K voor 120×120 (compleet met koepel)'],['Vleugel-kanteling','15 cm — automatische ventilatie'],['Bediening','Draadloze Z-Wave afstandsbediening (inbegrepen)'],['Dakhelling','Geschikt voor 0°–15° (volledig plat dak mogelijk)'],['Veiligheid','Hoogste slagvastheidsklasse SB 1200 (EN 1873)'],['Optie','Z-Wave buitenzonwering AMZ/C los verkrijgbaar'],['Garantie','10 jaar fabrieksgarantie']] },
+  { id:18, cat:'dakramen', catLabel:'FTP-V U3 · grenen', name:'Fakro grenen tuimeldakraam FTP-V U3 55×78', desc:'De compacte 55×78 maat in blank afgelakt grenenhout. Ideaal voor kleinere ruimtes of extra lichtinval op zolder. HR++ beglazing en handvat aan de onderzijde.', price:348.96, was:447.38, art:'ftp_hout', tag:'Aanbieding', img:'ftp-v-55x78.jpg', crossSell:[19,20,21], plus:['Compacte maat — past ook op smallere dakvlakken','Blank afgelakt grenenhout — warme, natuurlijke uitstraling','Energiebesparende HR++ beglazing','Voorzien van anti-inbraaksysteem topSafe','Geïntegreerd ventilatierooster met V40P luchtinlaat','Handvat onderaan — altijd binnen handbereik','10 jaar volledige fabrieksgarantie'], min:['Grenenhout is minder geschikt voor natte ruimtes; kies daarvoor de FTU-V of PTP-V variant'], specs:[['Productcodering','FTP'],['Afmeting','55×78 cm'],['Toepassing','Dakhelling 15–90°'],['Bediening','Handmatig, handvat aan onderzijde'],['Materiaal','Grenenhout, vacuüm geïmpregneerd'],['Afwerking','Blank afgelakt met acryllak'],['Beglazing','HR++ dubbel glas met argon en Warm TGI-spacer'],['U-waarde glas','1,1 W/m²K'],['Geluidswerendheid','32 dB'],['Ventilatierooster','Geïntegreerd (V40P)'],['Veiligheid','topSafe-systeem, klasse III (EN 13049)'],['Vleugel','180° draaibaar en vergrendelbaar voor schoonmaken'],['Fabrieksgarantie','10 jaar']] },
+  { id:19, cat:'toebehoren', catLabel:'Gootstuk EHV-A', name:'Fakro Gootstuk EHV-A 55×78', desc:'Origineel Fakro gootstuk voor hoogprofiel-pannendaken tot 90 mm dikte. Zorgt voor een waterdichte, blijvend nette afwerking rondom het dakraam.', price:87.22, was:111.82, art:'gootstuk', img:'ehv-a-55x78.jpg', specs:[['Type','EHV-A — flashing voor hoogprofiel'],['Materiaal','Polyester-gepoedercoat aluminium'],['Standaardkleur','RAL 7022 (antraciet)'],['Toepassing','Pannen tot 90 mm dikte'],['Installatiediepte','N (+3 cm)'],['Voor dakraam','FTP-V, FTU-V of PTP-V 55×78']] },
+  { id:20, cat:'toebehoren', catLabel:'Buitenkraag XDP', name:'Fakro Buitenkraag XDP 55×78', desc:'Isolerende buitenkraag rondom het dakraamkozijn. Verbetert de energieprestatie en dicht koudebruggen af tussen raam en dak.', price:39.27, was:50.35, art:'isolatie', img:'xdp-55x78.jpg', specs:[['Type','XDP — buitenkraag (thermische aansluiting)'],['Functie','Warmteverlies rondom het kozijn beperken'],['Materiaal','Isolatiefolie met dampscherm'],['Voordeel','Verbetert de totale U-waarde van het dakraam'],['Voor dakraam','55×78']] },
+  { id:21, cat:'zonwering', catLabel:'ARF rolgordijn', name:'Fakro ARF Verduisterend Rolgordijn 55×78', desc:'Origineel Fakro binnenrolgordijn, 100% verduisterend in stofcode 265. Klikt direct in het kozijn — eenvoudig zelf te plaatsen.', price:100.47, was:143.53, art:'rolgordijn', img:'arf-55x78.jpg', specs:[['Type','ARF — verduisterend rolgordijn (binnen)'],['Stofcode','265'],['Verduistering','100%'],['Bediening','Handmatig, zijgeleiders vergrendelen in elke positie'],['Voordeel','Beperkt ook warmteverlies in winter'],['Installatie','Klikt direct in het kozijn — zelf te plaatsen'],['Voor dakraam','55×78']] }
 ];
 
 const CATS = [
@@ -1170,6 +1264,29 @@ function renderGrid() {
             ${(p.plus||[]).map(x => `<li class="pm-plus"><span class="pm-icon">✓</span>${x}</li>`).join('')}
             ${(p.min||[]).map(x => `<li class="pm-min"><span class="pm-icon">−</span>${x}</li>`).join('')}
           </ul>
+        ` : ''}
+        ${p.crossSell && p.crossSell.length ? `
+          <div class="cross-sell">
+            <div class="cs-title">Maak je aankoop compleet</div>
+            <div class="cs-items">
+              ${p.crossSell.map(csId => {
+                const cp = PRODUCTS.find(x => x.id === csId);
+                if (!cp) return '';
+                return `
+                  <div class="cs-item">
+                    <div class="cs-thumb">${cp.img
+                      ? `<img src="fotos/${cp.img}" alt="${cp.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"><div class="cs-fallback">${ART[cp.art]}</div>`
+                      : ART[cp.art]}</div>
+                    <div class="cs-info">
+                      <div class="cs-name">${cp.name}</div>
+                      <div class="cs-price">${euro(cp.price)}${cp.was ? ` <span class="cs-was">${euro(cp.was)}</span>` : ''}</div>
+                    </div>
+                    <button class="cs-add" onclick="addToCart(${cp.id})" aria-label="Toevoegen">+</button>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
         ` : ''}
         ${p.specs ? `
           <details class="prod-specs">
