@@ -1,0 +1,47 @@
+ZET HIER JE PRODUCTFOTO'S
+=========================
+
+Plaats in dit mapje je eigen foto's met EXACT de onderstaande bestandsnamen.
+De winkel pikt ze dan automatisch op. Staat een foto er nog niet, dan toont
+de winkel vanzelf de getekende illustratie als nette terugval — er gaat dus
+nooit iets "kapot" als een foto ontbreekt.
+
+TIP: maak vierkante of liggende foto's (bijvoorbeeld 800 x 600 pixels).
+     JPG of PNG, het liefst onder 300 KB per foto voor een snelle website.
+
+
+DAKRAMEN
+--------
+ftp-v-78x118.jpg        →  Fakro FTP-V U3 Tuimeldakraam 78x118
+ftp-v-114x118.jpg       →  Fakro FTP-V U3 Tuimeldakraam 114x118
+ftu-v-78x140.jpg        →  Fakro FTU-V U3 Tuimeldakraam 78x140
+ftu-v-55x98.jpg         →  Fakro FTU-V U3 Tuimeldakraam 55x98
+ptp-v-78x118.jpg        →  Fakro PTP-V U3 Kunststof Dakraam 78x118
+ftu-vc-66x118.jpg       →  Fakro FTU-V/C P2 Retro Dakraam 66x118
+
+
+GOOTSTUKKEN & TOEBEHOREN
+------------------------
+gootstuk-ezv-78x118.jpg   →  Fakro Origineel Gootstuk EZV 78x118
+gootstuk-ezv-114x118.jpg  →  Fakro Origineel Gootstuk EZV 114x118
+ekb-profielen.jpg         →  Fakro EKB Aansluitprofielenset
+xdp-isolatieset.jpg       →  Fakro XDP Isolatieset
+zst-telescoopstang.jpg    →  Fakro ZST Telescoopstang 1.4m
+
+
+ZONWERING & ROLGORDIJNEN
+------------------------
+arf-rolgordijn-78x118.jpg      →  Fakro ARF Verduisterend Rolgordijn 78x118
+amz-buitenzonwering-78x118.jpg →  Fakro AMZ Buitenzonwering 78x118
+ajp-plisse-66x118.jpg          →  Fakro AJP Plissérolgordijn 66x118
+
+
+HOE KOM JE AAN DE FOTO'S?
+-------------------------
+- Officiële Fakro-beeldbank: log in met je dealer-/inkoopaccount bij Fakro
+  of je groothandel en download daar de productfoto's. Die mag je gebruiken
+  omdat je hun producten verkoopt.
+- Of fotografeer de ramen zelf — vaak nog beter, want klanten vertrouwen een
+  echte foto van het product dat ze daadwerkelijk krijgen.
+
+Belangrijk: gebruik geen foto's van internet/Google zonder toestemming.
