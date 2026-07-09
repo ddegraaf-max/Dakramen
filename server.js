@@ -186,7 +186,11 @@ app.post('/api/checkout', async (req, res) => {
 app.use(express.static(__dirname, {
   extensions: ['html'],
   setHeaders(res, filePath) {
-    if (/\.(jpg|jpeg|png|gif|svg|webp|pdf|css|js|ico)$/i.test(filePath)) {
+    // HTML en de productcatalogus nooit cachen: prijs- en tekstwijzigingen
+    // moeten direct zichtbaar zijn (en synchroon lopen met wat Stripe rekent)
+    if (/\.html$/i.test(filePath) || /producten\.js$/i.test(filePath)) {
+      res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+    } else if (/\.(jpg|jpeg|png|gif|svg|webp|pdf|css|js|ico)$/i.test(filePath)) {
       res.setHeader('Cache-Control', 'public, max-age=604800');
     }
   },
