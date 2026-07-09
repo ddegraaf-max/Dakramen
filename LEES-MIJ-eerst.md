@@ -35,8 +35,7 @@ je kunt rustig foto voor foto toevoegen.
 
 Gebruik geen foto's van internet zonder toestemming.
 
-## Straks naar WooCommerce
+## Afrekenen via Stripe
 
-In WooCommerce upload je per product gewoon één of meer foto's via de
-productpagina, of je verwijst ernaar in het CSV-importbestand. Dezelfde foto's
-die je hier verzamelt, kun je daar direct hergebruiken.
+De site rekent af via Stripe Checkout (iDEAL + kaart). Zie
+RAILWAY-instructies.md voor het instellen van de Stripe-sleutels.

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bedankt voor je bestelling — LumaDak</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="favicon.ico" sizes="48x48">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<meta name="theme-color" content="#1c2125">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#fbfaf7; --bg-warm:#f3f0e8; --ink:#1f2329; --ink-soft:#5a5e66; --gold:#e8b53d; --gold-deep:#cf9a22; --line:#e7e2d6; --white:#fff; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Outfit',sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+  .card { background:var(--white); border:1px solid var(--line); border-radius:20px; padding:52px 44px; max-width:560px; width:100%; text-align:center; box-shadow:0 20px 60px rgba(31,35,41,.08); }
+  .sun { width:72px; height:72px; margin:0 auto 26px; }
+  h1 { font-family:'Fraunces',serif; font-size:1.9rem; font-weight:600; margin-bottom:14px; }
+  p { color:var(--ink-soft); line-height:1.65; margin-bottom:14px; }
+  .steps { text-align:left; background:var(--bg-warm); border-radius:14px; padding:22px 24px; margin:26px 0; }
+  .steps h2 { font-family:'Fraunces',serif; font-size:1.05rem; margin-bottom:12px; }
+  .steps ol { padding-left:20px; color:var(--ink-soft); line-height:1.7; font-size:.94rem; }
+  a.btn { display:inline-block; background:var(--gold); color:var(--ink); text-decoration:none; font-weight:600; padding:14px 30px; border-radius:12px; margin-top:8px; transition:background .2s; }
+  a.btn:hover { background:var(--gold-deep); }
+  .contact { font-size:.86rem; margin-top:22px; }
+  .contact a { color:var(--ink); }
+</style>
+</head>
+<body>
+  <main class="card">
+    <svg class="sun" viewBox="0 0 72 72" fill="none" aria-hidden="true">
+      <rect width="72" height="72" rx="16" fill="#1c2125"/>
+      <g stroke="#e8b53d" stroke-width="3" stroke-linecap="round">
+        <line x1="36" y1="18" x2="36" y2="27"/>
+        <line x1="22" y1="24" x2="27" y2="31"/>
+        <line x1="50" y1="24" x2="45" y2="31"/>
+        <line x1="14" y1="36" x2="23" y2="38"/>
+        <line x1="58" y1="36" x2="49" y2="38"/>
+      </g>
+      <rect x="18" y="46" width="36" height="4" rx="2" fill="#e8b53d"/>
+    </svg>
+    <h1>Bedankt voor je bestelling!</h1>
+    <p>Je betaling is geslaagd. Je ontvangt van Stripe een betaalbevestiging per e-mail.</p>
+    <div class="steps">
+      <h2>Wat gebeurt er nu?</h2>
+      <ol>
+        <li>Wij geven je bestelling direct door aan onze vakhandel-partner.</li>
+        <li>Zij nemen contact met je op om de bezorgdag af te stemmen — meestal binnen enkele werkdagen.</li>
+        <li>Heb je "inclusief montage" aangevinkt? Dan bellen we je eerst om de montageprijs af te stemmen.</li>
+      </ol>
+    </div>
+    <a class="btn" href="/">Terug naar de winkel</a>
+    <p class="contact">Vragen? Bel <a href="tel:+31646150160">06&nbsp;46&nbsp;15&nbsp;01&nbsp;60</a> of mail <a href="mailto:info@lumadak.nl">info@lumadak.nl</a></p>
+  </main>
+  <script>try { localStorage.removeItem('lumadak_cart'); } catch (e) {}</script>
+</body>
+</html>
