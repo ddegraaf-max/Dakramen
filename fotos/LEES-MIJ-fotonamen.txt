@@ -45,3 +45,12 @@ HOE KOM JE AAN DE FOTO'S?
   echte foto van het product dat ze daadwerkelijk krijgen.
 
 Belangrijk: gebruik geen foto's van internet/Google zonder toestemming.
+
+Aanvulling juli 2026 (update 78x118 / 78x140 / 55x98 PK / 66x118 Retro):
+- ftu-v-78x140.jpg      -> wit FTU-raam (productfoto Dakraamopmaat)
+- ftu-v-pk-55x98.jpg    -> wit PK-raam met Politiekeurmerk-logo
+- ftu-vc-66x118.jpg     -> Retro-raam in pannendak
+- EHV-A 78x118/78x140/55x98: foto ehv-a-55x78.jpg hergebruikt (technisch identiek, andere maat)
+- XDP 78x118/78x140/55x98/66x118: foto xdp-55x78.jpg hergebruikt (idem)
+- ARF rolgordijnen: foto arf-255-50x62.jpg hergebruikt (andere kleurcode: 265 resp. 055)
+- Rietgootstuk ETV-B/C en EHV-P Retro: nog geen foto -> nette SVG-illustratie als fallback
