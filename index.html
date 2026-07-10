@@ -474,6 +474,13 @@
     .wrap { padding: 0 20px; }
     .foot-grid { grid-template-columns: 1fr; }
     .cart-btn span.txt { display: none; }
+    /* Cross-sell op mobiel: grotere thumbnails, leesbare tekst en een
+       volwaardig touch-target op de plusknop (44px-richtlijn) */
+    .card .cs-item { grid-template-columns: 52px 1fr auto; padding: 10px 12px; }
+    .card .cs-thumb { width: 52px; height: 52px; }
+    .card .cs-name { font-size: .86rem; }
+    .card .cs-price { font-size: .84rem; }
+    .card .cs-add { width: 42px; height: 42px; font-size: 1.25rem; }
   }
 </style>
 </head>
@@ -1193,7 +1200,7 @@
   </div>
 </div>
 
-<script src="producten.js?v=20260710-12"></script>
+<script src="producten.js?v=20260710-14"></script>
 <script>
 // ---------- Product illustraties (SVG) ----------
 const ART = {
