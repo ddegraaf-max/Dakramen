@@ -54,3 +54,6 @@ Aanvulling juli 2026 (update 78x118 / 78x140 / 55x98 PK / 66x118 Retro):
 - XDP 78x118/78x140/55x98/66x118: foto xdp-55x78.jpg hergebruikt (idem)
 - ARF rolgordijnen: foto arf-255-50x62.jpg hergebruikt (andere kleurcode: 265 resp. 055)
 - Rietgootstuk ETV-B/C en EHV-P Retro: nog geen foto -> nette SVG-illustratie als fallback
+- dmf-90x90.jpg              -> DMF platdakraam (uit screenshot gesneden)
+- dec-100x100.jpg            -> DEC-C lichtkoepel packshot
+- zrh12-afstandsbediening.jpg-> ZRH12 afstandsbediening (sfeerfoto met koepels)
