@@ -80,3 +80,11 @@ Stripe Dashboard → Settings → Payment methods → iDEAL aanzetten
 - Railway-domain (.up.railway.app) toont de site
 - Settings → Networking → Custom Domain: lumadak.nl (CNAME bij registrar)
 - Zet daarna SITE_URL op https://lumadak.nl
+
+## Cache-buster bij cataloguswijzigingen
+
+In index.html wordt de catalogus geladen als `producten.js?v=JJJJMMDD`.
+Verhoog die datum bij elke prijs- of productwijziging: browsers die een
+oude versie in cache hebben, halen de catalogus dan gegarandeerd opnieuw op.
+(De server stuurt sinds v3 ook no-cache-headers mee, maar de versieparameter
+vangt bezoekers af die producten.js nog met de oude 7-dagen-cache binnenkregen.)
