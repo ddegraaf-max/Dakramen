@@ -289,6 +289,22 @@ async function start() {
       console.error('[db] migratie mislukt:', err.message);
       process.exit(1);
     }
+
+    // Een beheerder moet kunnen inloggen, ook als hij zelf nooit iets bestelde.
+    // Zonder klantregel is er namelijk geen account om een wachtwoord voor te
+    // kiezen — en dan is het beheerpaneel voor niemand bereikbaar. We zetten de
+    // regel alvast klaar; het wachtwoord kiest hij via "wachtwoord vergeten".
+    for (const email of String(process.env.BEHEERDER_EMAILS || '')
+      .split(',').map(e => e.trim()).filter(Boolean)) {
+      try {
+        const klant = await db.vindOfMaakKlant({ email });
+        if (!klant.wachtwoord_hash) {
+          console.log(`[beheer] account klaargezet voor ${email} — kies een wachtwoord via /wachtwoord-vergeten`);
+        }
+      } catch (err) {
+        console.error(`[beheer] account voor ${email} aanmaken mislukt:`, err.message);
+      }
+    }
   } else {
     console.warn('LET OP: DATABASE_URL niet gezet — klantaccounts staan uit.');
   }
