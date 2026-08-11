@@ -1,18 +1,29 @@
-// LumaDak — Express-server met Stripe Checkout
-// Serveert de statische site en handelt betalingen af via Stripe (iDEAL + kaart).
+// LumaDak — Express-server met Stripe Checkout, klantaccounts en beheerpaneel.
 //
-// Vereiste environment variables op Railway:
-//   STRIPE_SECRET_KEY      — sk_test_... (test) of sk_live_... (live)
-//   STRIPE_WEBHOOK_SECRET  — whsec_... (optioneel maar aanbevolen, voor orderbevestiging)
-//   RESEND_API_KEY         — optioneel: orderbevestiging per e-mail naar info@lumadak.nl
-//   SITE_URL               — optioneel: bv. https://lumadak.nl (anders afgeleid van request)
+// Environment variables op Railway:
+//   STRIPE_SECRET_KEY      — sk_test_... (test) of sk_live_... (live)          [verplicht om te kunnen afrekenen]
+//   STRIPE_WEBHOOK_SECRET  — whsec_...                                          [verplicht: zonder handtekening
+//                            weigeren we webhooks, anders kan iedereen een
+//                            bestelling verzinnen]
+//   DATABASE_URL           — zet Railway zelf zodra je Postgres toevoegt        [nodig voor accounts]
+//   SESSIE_GEHEIM          — lange willekeurige string, houdt klanten ingelogd  [aanbevolen]
+//   BEHEERDER_EMAILS       — bv. info@lumadak.nl — wie in /beheer mag           [nodig voor beheer]
+//   RESEND_API_KEY         — voor bestelbevestiging en statusmails              [aanbevolen]
+//   SITE_URL               — bv. https://lumadak.nl                             [aanbevolen]
 
 const express = require('express');
 const path = require('path');
 const PRODUCTS = require('./producten.js');
+const db = require('./db');
+const auth = require('./auth');
+const mail = require('./mail');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Railway zit achter een proxy; zonder dit staat req.protocol altijd op http
+// en kloppen de secure-cookies en terugkeer-URL's niet.
+app.set('trust proxy', 1);
 
 const stripe = process.env.STRIPE_SECRET_KEY
   ? require('stripe')(process.env.STRIPE_SECRET_KEY)
@@ -38,76 +49,134 @@ function berekenVerzendkosten(regels) {
 app.post('/api/stripe-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   if (!stripe) return res.status(500).send('Stripe niet geconfigureerd');
 
+  if (!process.env.STRIPE_WEBHOOK_SECRET) {
+    // Bewust hard weigeren. Zonder handtekening kan iedereen die het adres kent
+    // een "geslaagde betaling" posten en zo een order en een account aanmaken.
+    // Stripe blijft het bericht 3 dagen opnieuw sturen, dus zodra de sleutel
+    // er staat, komen gemiste bestellingen alsnog binnen.
+    console.error('[webhook] GEWEIGERD: STRIPE_WEBHOOK_SECRET ontbreekt.');
+    return res.status(500).send('Webhook secret ontbreekt op de server.');
+  }
+
   let event;
   try {
-    if (process.env.STRIPE_WEBHOOK_SECRET) {
-      const sig = req.headers['stripe-signature'];
-      event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
-    } else {
-      event = JSON.parse(req.body.toString());
-      console.warn('[webhook] STRIPE_WEBHOOK_SECRET ontbreekt — handtekening NIET geverifieerd');
-    }
+    event = stripe.webhooks.constructEvent(
+      req.body, req.headers['stripe-signature'], process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
     console.error('[webhook] verificatie mislukt:', err.message);
     return res.status(400).send(`Webhook error: ${err.message}`);
   }
 
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object;
-    const order = {
-      sessionId: session.id,
-      bedrag: (session.amount_total / 100).toFixed(2),
-      klant: session.customer_details?.name || '',
-      email: session.customer_details?.email || '',
-      telefoon: session.customer_details?.phone || '',
-      adres: session.customer_details?.address || {},
-      montage: session.metadata?.montage === 'ja' ? 'JA — contact opnemen voor prijsafspraak' : 'nee',
-      bestelling: session.metadata?.overzicht || '',
-    };
-    console.log('[order] betaling geslaagd:', JSON.stringify(order));
-    await stuurOrderMail(order).catch(e => console.error('[order] mail mislukt:', e.message));
-  }
-
+  // Stripe eerst bevestigen, daarna pas het werk doen: een trage mail mag geen
+  // timeout veroorzaken waardoor Stripe alles nog eens stuurt.
   res.json({ received: true });
+
+  if (event.type === 'checkout.session.completed') {
+    verwerkBetaling(event.data.object, baseUrl(req))
+      .catch(err => console.error('[order] verwerken mislukt:', err.message));
+  }
 });
 
-async function stuurOrderMail(order) {
-  if (!process.env.RESEND_API_KEY) return;
-  const a = order.adres || {};
-  const adresregel = [a.line1, a.line2, `${a.postal_code || ''} ${a.city || ''}`.trim(), a.country]
-    .filter(Boolean).join(', ');
-  const html = `
-    <h2>Nieuwe bestelling LumaDak — €${order.bedrag}</h2>
-    <p><strong>Klant:</strong> ${order.klant}<br>
-    <strong>E-mail:</strong> ${order.email}<br>
-    <strong>Telefoon:</strong> ${order.telefoon || '—'}<br>
-    <strong>Adres:</strong> ${adresregel || '—'}<br>
-    <strong>Montage gewenst:</strong> ${order.montage}</p>
-    <p><strong>Bestelling:</strong><br>${(order.bestelling || '').replace(/\n/g, '<br>')}</p>
-    <p style="color:#888">Stripe session: ${order.sessionId}</p>`;
+// Zet een geslaagde Stripe-sessie om in een bestelling, een klant en de mails.
+async function verwerkBetaling(session, url) {
+  const klantgegevens = session.customer_details || {};
+  const email = klantgegevens.email || '';
 
-  // 3 pogingen met oplopende wachttijd (zelfde patroon als andere projecten)
-  for (let poging = 1; poging <= 3; poging++) {
-    const resp = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        from: 'LumaDak <bestellingen@lumadak.nl>',
-        to: ['info@lumadak.nl'],
-        subject: `Nieuwe bestelling — €${order.bedrag} — ${order.klant}`,
-        html,
-      }),
-    });
-    if (resp.ok) return;
-    console.warn(`[mail] poging ${poging} mislukt (${resp.status})`);
-    if (poging < 3) await new Promise(r => setTimeout(r, poging * 2000));
+  // De regels staan als "id:aantal,id:aantal" in de metadata. De namen en
+  // prijzen halen we uit producten.js — dezelfde bron waarmee we hebben
+  // afgerekend, dus wat in de database komt is per definitie wat de klant betaalde.
+  const regels = String(session.metadata?.regels || '')
+    .split(',').filter(Boolean)
+    .map(paar => {
+      const [id, aantal] = paar.split(':').map(Number);
+      const product = PRODUCTS.find(p => p.id === id);
+      return product && aantal > 0
+        ? { productId: product.id, naam: product.name, aantal, stuksprijsCent: Math.round(product.price * 100) }
+        : null;
+    })
+    .filter(Boolean);
+
+  if (!db.beschikbaar()) {
+    // Zonder database geen account, maar de winkelier moet het wél weten.
+    console.log('[order] betaling geslaagd (geen database):', session.id, email);
+    const nep = {
+      bestelnummer: session.id.slice(-10), bedrag_cent: session.amount_total,
+      verzendkosten_cent: 0, montage: session.metadata?.montage === 'ja',
+      naam: klantgegevens.name || '', email, telefoon: klantgegevens.phone || '',
+      adres: klantgegevens.address || {}, regels: regels.map(r => ({
+        naam: r.naam, aantal: r.aantal, stuksprijs_cent: r.stuksprijsCent })),
+    };
+    await mail.verstuur({ to: mail.WINKEL_MAIL, ...mail.interneMelding(nep, url) });
+    return;
   }
-  throw new Error('Resend faalde na 3 pogingen');
+
+  if (!email) {
+    console.error('[order] geen e-mailadres in de Stripe-sessie:', session.id);
+    return;
+  }
+
+  const klant = await db.vindOfMaakKlant({
+    email, naam: klantgegevens.name, telefoon: klantgegevens.phone,
+  });
+
+  const { bestelling, nieuw } = await db.bewaarBestelling({
+    klantId: klant.id,
+    stripeSessionId: session.id,
+    bedragCent: session.amount_total,
+    verzendkostenCent: Number(session.metadata?.verzendkosten_cent || 0),
+    montage: session.metadata?.montage === 'ja',
+    naam: klantgegevens.name, email, telefoon: klantgegevens.phone,
+    adres: klantgegevens.address || {},
+    regels,
+  });
+
+  // Stripe mag hetzelfde bericht vaker sturen; dan niet nóg een keer mailen.
+  if (!nieuw) {
+    console.log('[order] al verwerkt, overgeslagen:', bestelling.bestelnummer);
+    return;
+  }
+  console.log('[order] opgeslagen:', bestelling.bestelnummer, klant.email);
+
+  const voorMail = { ...bestelling, regels: regels.map(r => ({
+    naam: r.naam, aantal: r.aantal, stuksprijs_cent: r.stuksprijsCent })) };
+
+  // Heeft de klant nog geen wachtwoord, dan zetten we het account voor hem klaar
+  // en gaat er een instel-link mee in de bevestiging.
+  let wachtwoordLink = null;
+  if (!klant.wachtwoord_hash) {
+    await db.trekTokensIn(klant.id, 'instellen');
+    const token = await db.maakToken(klant.id, 'instellen', 7 * 24 * 60);
+    wachtwoordLink = `${url}/wachtwoord-instellen?token=${encodeURIComponent(token)}`;
+  }
+
+  await Promise.all([
+    mail.verstuur({
+      to: klant.email, replyTo: mail.WINKEL_MAIL,
+      ...mail.bestelbevestiging(voorMail, wachtwoordLink, url),
+    }),
+    mail.verstuur({
+      to: mail.WINKEL_MAIL, replyTo: klant.email,
+      ...mail.interneMelding(voorMail, url),
+    }),
+  ]);
 }
 
-// ---------- JSON-routes ----------
+// ---------- Body's, sessies en routes ----------
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
+if (db.beschikbaar()) {
+  app.use(auth.sessieMiddleware());
+  app.use(require('./routes-account'));
+  app.use(require('./routes-beheer'));
+} else {
+  // Zonder database bestaan de accountpagina's simpelweg niet; dat is duidelijker
+  // dan een pagina die vastloopt op een ontbrekende verbinding.
+  app.use(['/account', '/inloggen', '/beheer', '/wachtwoord-vergeten', '/wachtwoord-instellen'],
+    (_req, res) => res.status(503).send(
+      'Klantaccounts zijn nog niet actief: er is geen database gekoppeld.'));
+}
 
 app.post('/api/checkout', async (req, res) => {
   try {
@@ -168,7 +237,10 @@ app.post('/api/checkout', async (req, res) => {
       locale: 'nl',
       metadata: {
         montage: montage ? 'ja' : 'nee',
-        overzicht: overzicht.slice(0, 490), // metadata-limiet 500 tekens
+        overzicht: overzicht.slice(0, 490),                 // metadata-limiet: 500 tekens per veld
+        // Compacte weergave waarmee de webhook de bestelling exact reconstrueert.
+        regels: regels.map(({ product, qty }) => `${product.id}:${qty}`).join(',').slice(0, 490),
+        verzendkosten_cent: String(verzendkosten * 100),
       },
       success_url: `${url}/bedankt.html?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${url}/?betaling=geannuleerd`,
@@ -196,11 +268,37 @@ app.use(express.static(__dirname, {
   },
 }));
 
-app.get('/gezondheid', (_req, res) => res.json({ ok: true }));
+app.get('/gezondheid', (_req, res) => res.json({
+  ok: true,
+  database: db.beschikbaar(),
+  stripe: Boolean(stripe),
+}));
 
 app.use((_req, res) => res.status(404).sendFile(path.join(__dirname, 'index.html')));
 
-app.listen(PORT, () => {
-  console.log(`LumaDak draait op poort ${PORT}`);
-  if (!stripe) console.warn('LET OP: STRIPE_SECRET_KEY niet gezet — afrekenen is uitgeschakeld.');
-});
+// ---------- Opstarten ----------
+
+async function start() {
+  if (db.beschikbaar()) {
+    try {
+      await db.migreer();
+      console.log('[db] verbonden, schema bijgewerkt');
+    } catch (err) {
+      // Beter meteen stoppen dan draaien met een half schema: dan verdwijnen
+      // er stilletjes bestellingen.
+      console.error('[db] migratie mislukt:', err.message);
+      process.exit(1);
+    }
+  } else {
+    console.warn('LET OP: DATABASE_URL niet gezet — klantaccounts staan uit.');
+  }
+
+  app.listen(PORT, () => {
+    console.log(`LumaDak draait op poort ${PORT}`);
+    if (!stripe) console.warn('LET OP: STRIPE_SECRET_KEY niet gezet — afrekenen is uitgeschakeld.');
+    if (!process.env.STRIPE_WEBHOOK_SECRET) console.warn('LET OP: STRIPE_WEBHOOK_SECRET niet gezet — webhooks worden geweigerd.');
+    if (!process.env.BEHEERDER_EMAILS) console.warn('LET OP: BEHEERDER_EMAILS niet gezet — /beheer is voor niemand toegankelijk.');
+  });
+}
+
+start();

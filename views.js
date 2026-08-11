@@ -105,9 +105,41 @@ const STIJL = `
   table.regels tr:last-child td { border-bottom:none; font-weight:600; border-top:2px solid var(--ink); }
   .leeg { text-align:center; padding:44px 20px; color:var(--ink-soft); }
   .adres { color:var(--ink-soft); font-size:.88rem; margin-top:10px; }
+  /* beheerpaneel */
+  .filterbalk { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+  .filter {
+    background:var(--white); border:1.5px solid var(--line); border-radius:50px;
+    padding:7px 15px; font-size:.86rem; color:var(--ink-soft); text-decoration:none;
+  }
+  .filter:hover { border-color:var(--gold); color:var(--ink); }
+  .filter.actief { background:var(--ink); border-color:var(--ink); color:var(--white); }
+  .telling { opacity:.6; font-size:.8em; margin-left:3px; }
+  .zoekbalk { display:flex; gap:8px; margin-bottom:22px; }
+  .zoekbalk input { flex:1; }
+  .leeg-knop {
+    background:var(--white); color:var(--ink-soft); border:1.5px solid var(--line);
+    text-decoration:none; display:inline-flex; align-items:center;
+  }
+  .beheer-grid {
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));
+    gap:18px; padding:16px 0; border-top:1px solid var(--line);
+  }
+  .veldkop {
+    font-size:.72rem; text-transform:uppercase; letter-spacing:.06em;
+    color:var(--ink-soft); font-weight:600; margin-bottom:5px;
+  }
+  .montage { color:var(--gold-deep); font-weight:600; font-size:.86rem; margin-top:6px; }
+  .beheer-form {
+    display:flex; flex-wrap:wrap; gap:10px; align-items:center;
+    border-top:1px solid var(--line); padding-top:15px;
+  }
+  .beheer-form select { width:auto; flex:1; min-width:150px; padding:8px 11px; font-size:.9rem; }
+  .vinkje { display:flex; align-items:center; gap:6px; margin:0; font-size:.86rem; color:var(--ink-soft); }
+  .vinkje input { width:auto; }
   @media (max-width:560px) {
     .kop nav { gap:12px; font-size:.85rem; }
     .kaart { padding:20px; }
+    .beheer-form select { min-width:0; }
   }
 `;
 
@@ -272,7 +304,95 @@ function account({ klant, bestellingen, beheerder, gelukt }) {
   return schil({ titel: 'Mijn bestellingen', inhoud, klant, beheerder });
 }
 
+// ---------- Beheerpaneel ----------
+
+function beheerRij(b, csrf) {
+  const a = b.adres || {};
+  const adres = [a.line1, a.line2, `${a.postal_code || ''} ${a.city || ''}`.trim()]
+    .filter(Boolean).join(', ');
+  const regels = (b.regels || [])
+    .map(r => `${Number(r.aantal)}× ${esc(r.naam)}`).join('<br>');
+
+  const opties = Object.entries(STATUS_TEKST)
+    .map(([w, t]) => `<option value="${w}"${b.status === w ? ' selected' : ''}>${esc(t)}</option>`)
+    .join('');
+
+  return `
+    <div class="kaart">
+      <div class="bestelling-kop">
+        <div>
+          <div class="bestelnr">${esc(b.bestelnummer)}</div>
+          <div class="meta">${esc(datum(b.aangemaakt_op))} · ${euro(b.bedrag_cent)}</div>
+        </div>
+        ${badge(b.status)}
+      </div>
+
+      <div class="beheer-grid">
+        <div>
+          <div class="veldkop">Klant</div>
+          <div>${esc(b.naam || '—')}</div>
+          <div class="meta"><a href="mailto:${esc(b.email)}">${esc(b.email)}</a></div>
+          <div class="meta">${esc(b.telefoon || 'geen telefoonnummer')}</div>
+        </div>
+        <div>
+          <div class="veldkop">Bezorgen naar</div>
+          <div class="meta">${esc(adres || '—')}</div>
+          ${b.montage ? '<div class="montage">Montage gewenst</div>' : ''}
+        </div>
+        <div>
+          <div class="veldkop">Bestelling</div>
+          <div class="meta">${regels || '—'}</div>
+          ${b.verzendkosten_cent > 0
+            ? `<div class="meta">Bezorging: ${euro(b.verzendkosten_cent)}</div>` : ''}
+        </div>
+      </div>
+
+      <form method="post" action="/beheer/status" class="beheer-form">
+        <input type="hidden" name="_csrf" value="${esc(csrf)}">
+        <input type="hidden" name="id" value="${Number(b.id)}">
+        <select name="status" aria-label="Status">${opties}</select>
+        <label class="vinkje">
+          <input type="checkbox" name="mail" value="1" checked> klant mailen
+        </label>
+        <button class="knop smalletjes" type="submit">Opslaan</button>
+      </form>
+    </div>`;
+}
+
+function beheer({ klant, bestellingen, status, zoek, gelukt, fout, csrf, aantallen }) {
+  const filters = ['', ...Object.keys(STATUS_TEKST)].map(w => {
+    const actief = (status || '') === w;
+    const label = w === '' ? 'Alle' : STATUS_TEKST[w];
+    const n = w === '' ? aantallen.totaal : (aantallen[w] || 0);
+    return `<a class="filter${actief ? ' actief' : ''}"
+              href="/beheer?status=${encodeURIComponent(w)}${zoek ? `&zoek=${encodeURIComponent(zoek)}` : ''}">
+              ${esc(label)} <span class="telling">${n}</span></a>`;
+  }).join('');
+
+  const inhoud = `
+    <h1>Bestellingen</h1>
+    <p class="lead">Wijzig de status en houd je klanten op de hoogte.</p>
+    ${melding('goed', gelukt)}${melding('fout', fout)}
+
+    <div class="filterbalk">${filters}</div>
+
+    <form method="get" action="/beheer" class="zoekbalk">
+      ${status ? `<input type="hidden" name="status" value="${esc(status)}">` : ''}
+      <input type="text" name="zoek" placeholder="Zoek op bestelnummer, naam of e-mail"
+             value="${esc(zoek || '')}">
+      <button class="knop smalletjes" type="submit">Zoeken</button>
+      ${zoek ? '<a class="knop smalletjes leeg-knop" href="/beheer">Wissen</a>' : ''}
+    </form>
+
+    ${bestellingen.length
+      ? bestellingen.map(b => beheerRij(b, csrf)).join('')
+      : `<div class="kaart"><div class="leeg">Geen bestellingen gevonden.</div></div>`}`;
+
+  return schil({ titel: 'Beheer', inhoud, klant, beheerder: true });
+}
+
 module.exports = {
   STATUS_TEKST, STATUS_KLEUR, esc, euro, datum, schil, melding, badge,
   inloggen, wachtwoordVergeten, wachtwoordInstellen, account, bestellingKaart,
+  beheer,
 };
