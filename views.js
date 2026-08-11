@@ -105,6 +105,37 @@ const STIJL = `
   table.regels tr:last-child td { border-bottom:none; font-weight:600; border-top:2px solid var(--ink); }
   .leeg { text-align:center; padding:44px 20px; color:var(--ink-soft); }
   .adres { color:var(--ink-soft); font-size:.88rem; margin-top:10px; }
+  /* statusbalk op /account */
+  .traject { display:flex; list-style:none; margin:20px 0 4px; padding:0; }
+  .traject li { flex:1; position:relative; text-align:center; padding-top:26px; }
+  .traject li::before {
+    content:''; position:absolute; top:9px; left:-50%; width:100%; height:3px;
+    background:var(--line); border-radius:2px;
+  }
+  .traject li:first-child::before { display:none; }
+  .traject li.af::before { background:var(--gold); }
+  .punt {
+    position:absolute; top:2px; left:50%; transform:translateX(-50%);
+    width:17px; height:17px; border-radius:50%;
+    background:var(--white); border:3px solid var(--line);
+  }
+  .traject li.af .punt { background:var(--gold); border-color:var(--gold); }
+  .traject li.nu .punt { box-shadow:0 0 0 5px var(--gold-soft); }
+  .etiket { display:block; font-size:.78rem; line-height:1.35; color:var(--ink-soft); padding:0 3px; }
+  .traject li.nu .etiket { color:var(--ink); font-weight:600; }
+  .traject-uitleg {
+    background:var(--bg-warm); border-radius:9px; padding:12px 15px;
+    margin:16px 0 4px; font-size:.9rem; color:var(--ink);
+  }
+  .geannuleerd-blok {
+    background:#fdeaea; border:1px solid #f0c2c2; color:#8d2b2b;
+    border-radius:9px; padding:12px 15px; margin:16px 0 4px; font-size:.9rem;
+  }
+  .bijgewerkt { font-size:.8rem; color:var(--ink-soft); margin-top:10px; }
+  @media (max-width:460px) {
+    .etiket { font-size:.7rem; }
+  }
+
   /* beheerpaneel */
   .filterbalk { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
   .filter {
@@ -261,6 +292,35 @@ function wachtwoordInstellen({ fout, token, nieuw, minLengte, csrf }) {
   return schil({ titel: 'Wachtwoord instellen', inhoud });
 }
 
+// Dezelfde vier stappen als in de bestelmail, zodat de klant hetzelfde verhaal
+// ziet of hij nu in zijn mailbox kijkt of op zijn account.
+const TRAJECT = [
+  ['betaald', 'Betaald', 'We hebben je betaling ontvangen en gaan aan de slag.'],
+  ['in_behandeling', 'Klaarmaken', 'We maken je bestelling klaar voor verzending.'],
+  ['verzonden', 'Onderweg', 'Je bestelling is onderweg. De bezorger belt je voor een bezorgmoment.'],
+  ['geleverd', 'Geleverd', 'Je bestelling is bezorgd. Veel plezier ermee!'],
+];
+
+function statusBalk(status) {
+  if (status === 'geannuleerd') {
+    return `<div class="geannuleerd-blok">
+      <strong>Deze bestelling is geannuleerd.</strong>
+      Vragen hierover? Bel <a href="tel:+31646150160">06 46 15 01 60</a> of mail
+      <a href="mailto:info@lumadak.nl">info@lumadak.nl</a>.</div>`;
+  }
+
+  const nu = Math.max(0, TRAJECT.findIndex(([w]) => w === status));
+
+  const stappen = TRAJECT.map(([, kort], i) => {
+    const klassen = [i <= nu ? 'af' : '', i === nu ? 'nu' : ''].filter(Boolean).join(' ');
+    return `<li class="${klassen}"><span class="punt"></span><span class="etiket">${esc(kort)}</span></li>`;
+  }).join('');
+
+  return `
+    <ol class="traject">${stappen}</ol>
+    <div class="traject-uitleg">${esc(TRAJECT[nu][2])}</div>`;
+}
+
 function bestellingKaart(b) {
   const regels = (b.regels || []).map(r => `
     <tr><td>${esc(r.naam)} <span class="meta">× ${Number(r.aantal)}</span></td>
@@ -279,6 +339,12 @@ function bestellingKaart(b) {
         </div>
         ${badge(b.status)}
       </div>
+
+      ${statusBalk(b.status)}
+
+      ${b.bijgewerkt_op && b.status !== 'betaald'
+        ? `<div class="bijgewerkt">Laatst bijgewerkt op ${esc(datum(b.bijgewerkt_op))}</div>` : ''}
+
       <table class="regels">
         ${regels}
         <tr><td>Bezorging</td><td>${b.verzendkosten_cent > 0 ? euro(b.verzendkosten_cent) : 'gratis'}</td></tr>
