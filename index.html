@@ -108,9 +108,9 @@
   .fly-item {
     position: fixed; z-index: 310;
     pointer-events: none;
-    border-radius: 14px; overflow: hidden;
+    border-radius: 9px; overflow: hidden;
     background: var(--white);
-    box-shadow: 0 16px 36px rgba(31,35,41,.28);
+    box-shadow: 0 8px 20px rgba(31,35,41,.24);
     will-change: transform, opacity;
   }
   .fly-item img, .fly-item svg { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -1367,13 +1367,21 @@ function flyToCart(bron) {
   const naar = doel.getBoundingClientRect();
   if (!van.width || !naar.width) return;
 
+  // Een dakraamfoto van ~320x240 die op ware grootte overvliegt oogt log.
+  // Daarom krijgt de vliegende kopie een maximum; de verhouding blijft heel
+  // en de kleine accessoire-thumbs (44px) veranderen hierdoor niet.
+  const MAX = 72;
+  const krimp = Math.min(1, MAX / Math.max(van.width, van.height));
+  const breedte = van.width * krimp;
+  const hoogte = van.height * krimp;
+
   const klon = document.createElement('div');
   klon.className = 'fly-item';
   klon.innerHTML = thumb.innerHTML;
-  klon.style.left = van.left + 'px';
-  klon.style.top = van.top + 'px';
-  klon.style.width = van.width + 'px';
-  klon.style.height = van.height + 'px';
+  klon.style.left = (van.left + (van.width - breedte)/2) + 'px';   // gecentreerd op de thumb
+  klon.style.top = (van.top + (van.height - hoogte)/2) + 'px';
+  klon.style.width = breedte + 'px';
+  klon.style.height = hoogte + 'px';
   document.body.appendChild(klon);
 
   // van middelpunt thumb naar middelpunt winkelwagenknop
@@ -1383,14 +1391,14 @@ function flyToCart(bron) {
   const vlucht = klon.animate([
     { transform: 'translate(0,0) scale(1)', opacity: 1,
       easing: 'cubic-bezier(.22,.61,.36,1)' },                       // wipt op
-    { transform: `translate(${dx*.55}px, ${dy*.4 - 90}px) scale(.5)`, opacity: .95, offset: .5,
+    { transform: `translate(${dx*.55}px, ${dy*.4 - 80}px) scale(.72)`, opacity: .95, offset: .5,
       easing: 'cubic-bezier(.55,.06,.68,.19)' },                     // valt versneld in
-    { transform: `translate(${dx}px, ${dy}px) scale(.1)`, opacity: .2 },
-  ], { duration: 750, fill: 'forwards' });
+    { transform: `translate(${dx}px, ${dy}px) scale(.28)`, opacity: .15 },
+  ], { duration: 700, fill: 'forwards' });
 
   vlucht.onfinish = () => klon.remove();
   vlucht.oncancel = () => klon.remove();
-  setTimeout(bumpCart, 620);
+  setTimeout(bumpCart, 580);
 }
 
 function bumpCart() {
