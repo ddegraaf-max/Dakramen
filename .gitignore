@@ -1,1 +1,6 @@
 node_modules/
+
+# Sleutels blijven lokaal — nooit naar GitHub.
+# Op Railway zet je deze waarden als environment variables, niet in een bestand.
+.env
+.env.*
