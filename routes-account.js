@@ -89,7 +89,17 @@ router.post('/wachtwoord-vergeten',
         const token = await db.maakToken(klant.id, 'reset', 60);
         const link = `${siteUrl(req)}/wachtwoord-instellen?token=${encodeURIComponent(token)}`;
         const bericht = mail.wachtwoordReset(klant.naam, link);
-        await mail.verstuur({ to: klant.email, ...bericht });
+        const verzonden = await mail.verstuur({ to: klant.email, ...bericht });
+
+        // Ontsnappingsluik voor de winkelier zelf. Bij een verse installatie is
+        // Resend vaak nog niet ingericht (domein niet geverifieerd), en dan zou
+        // een beheerder zichzelf buiten zijn eigen paneel sluiten zonder weg
+        // terug. Alleen voor adressen uit BEHEERDER_EMAILS — nooit voor klanten,
+        // want dan zou een reset-link in de logs van iedere klant belanden.
+        if (!verzonden && auth.isBeheerder(klant.email)) {
+          console.warn('[beheer] mail versturen mislukt. Gebruik deze eenmalige link '
+            + '(1 uur geldig, zichtbaar in de Railway-logs):\n' + link);
+        }
       }
     } catch (err) {
       console.error('[reset] fout:', err.message);
