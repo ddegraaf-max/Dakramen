@@ -172,6 +172,22 @@ router.post('/wachtwoord-instellen',
     }
   });
 
+// De winkelpagina is een statisch bestand en weet dus niet wie er kijkt.
+// Hiermee vraagt hij dat na het laden alsnog op, zodat de kop "Inloggen" of
+// de voornaam van de klant kan tonen. Bestaat deze route niet (geen database),
+// dan blijft de link in de kop verborgen.
+router.get('/api/ik', (req, res) => {
+  const klant = auth.huidigeKlant(req);
+  res.set('Cache-Control', 'no-store');
+  res.json(klant
+    ? {
+        ingelogd: true,
+        naam: String(klant.naam || '').split(' ')[0],
+        beheerder: auth.isBeheerder(klant.email),
+      }
+    : { ingelogd: false });
+});
+
 // ---------- Bestellingen ----------
 
 router.get('/account', auth.vereisLogin, async (req, res) => {
