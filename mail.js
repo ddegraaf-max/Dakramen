@@ -7,7 +7,19 @@
 // site gewoon door.
 
 const AFZENDER = 'LumaDak <bestellingen@lumadak.nl>';
-const WINKEL_MAIL = 'info@lumadak.nl';
+const WINKEL_MAIL = 'info@lumadak.nl';          // wat de klant in de voettekst ziet
+
+// Waar de bestelmelding heen gaat. Meerdere adressen mogen, komma-gescheiden:
+// BESTELLING_MAIL=d.degraaf@creditline.nl,info@lumadak.nl
+function winkelOntvangers() {
+  const lijst = String(process.env.BESTELLING_MAIL || WINKEL_MAIL)
+    .split(',').map(e => e.trim()).filter(Boolean);
+  return lijst.length ? lijst : [WINKEL_MAIL];
+}
+
+function siteBasis() {
+  return String(process.env.SITE_URL || 'https://lumadak.nl').replace(/\/$/, '');
+}
 
 // Huisstijl, gelijk aan de :root-variabelen in index.html
 const K = {
@@ -56,11 +68,15 @@ function schil(inhoud, voorvertoning) {
 
         <tr><td style="height:4px;background:${K.goud};font-size:0;line-height:0;">&nbsp;</td></tr>
 
-        <tr><td style="padding:28px 32px 6px 32px;">
-          <div style="font-family:Georgia,'Times New Roman',serif;font-size:23px;font-weight:700;
-                      letter-spacing:.14em;color:${K.ink};">LUMA<span style="color:${K.goudDiep};">DAK</span></div>
-          <div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:.09em;
-                      text-transform:uppercase;color:${K.inkSoft};padding-top:5px;">Fakro dakramen · thuisbezorgd</div>
+        <tr><td style="padding:26px 32px 8px 32px;">
+          <!-- Blokkeert de client afbeeldingen, dan valt de alt-tekst terug op
+               de merknaam; daarom is die bewust netjes opgemaakt. -->
+          <a href="${siteBasis()}" style="text-decoration:none;">
+            <img src="${siteBasis()}/logo-email.png" width="170" height="77" alt="LumaDak"
+                 style="display:block;border:0;width:170px;height:auto;
+                        font-family:Georgia,serif;font-size:21px;font-weight:bold;
+                        letter-spacing:.12em;color:${K.ink};">
+          </a>
         </td></tr>
 
         <tr><td style="padding:20px 32px 30px 32px;">${inhoud}</td></tr>
@@ -151,13 +167,60 @@ function gegevensBlok(order) {
   </table>`;
 }
 
+// Toont waar de bestelling in het traject staat. Wie net betaald heeft moet
+// meteen zien dat het pakket nog niet onderweg is — dat scheelt telefoontjes.
+const TRAJECT = [
+  ['betaald', 'Betaling ontvangen', 'Je betaling is binnen en bevestigd.'],
+  ['in_behandeling', 'We maken je bestelling klaar', 'Meestal binnen 1 tot 2 werkdagen.'],
+  ['verzonden', 'Onderweg naar je toe', 'Onze bezorgpartner belt je voor een bezorgmoment.'],
+  ['geleverd', 'Geleverd', 'Klaar om te plaatsen.'],
+];
+
+function traject(status) {
+  const nu = Math.max(0, TRAJECT.findIndex(([w]) => w === status));
+
+  const rijen = TRAJECT.map(([, titel, uitleg], i) => {
+    const klaar = i <= nu;
+    const actief = i === nu;
+    const bol = klaar
+      ? `background:${K.goud};border:2px solid ${K.goud};`
+      : `background:${K.wit};border:2px solid ${K.lijn};`;
+
+    return `
+      <tr>
+        <td width="26" valign="top" style="padding:0 10px 0 0;">
+          <div style="width:14px;height:14px;border-radius:9px;margin-top:4px;${bol}">&nbsp;</div>
+        </td>
+        <td style="padding:0 0 ${i === TRAJECT.length - 1 ? '0' : '13px'} 0;
+                   font-family:Arial,Helvetica,sans-serif;">
+          <div style="font-size:14px;font-weight:${actief ? 'bold' : 'normal'};
+                      color:${klaar ? K.ink : K.inkSoft};">${esc(titel)}</div>
+          <div style="font-size:12.5px;color:${K.inkSoft};padding-top:2px;">${esc(uitleg)}</div>
+        </td>
+      </tr>`;
+  }).join('');
+
+  return `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+           style="background:${K.bgWarm};border-radius:10px;padding:18px;margin:6px 0 20px 0;">
+      <tr><td>
+        <div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:bold;
+                    letter-spacing:.07em;text-transform:uppercase;color:${K.inkSoft};
+                    padding-bottom:13px;">Zo staat je bestelling ervoor</div>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rijen}</table>
+      </td></tr>
+    </table>`;
+}
+
 // ---------- Berichten ----------
 
 function bestelbevestiging(order, wachtwoordLink, siteUrl) {
   const voornaam = String(order.naam || '').split(' ')[0];
   const inhoud = `
     ${kop(voornaam ? `Bedankt voor je bestelling, ${voornaam}!` : 'Bedankt voor je bestelling!')}
-    ${alinea('We hebben je betaling ontvangen en gaan meteen aan de slag. Hieronder vind je de details.')}
+    ${alinea('We hebben je betaling ontvangen en gaan meteen aan de slag. '
+      + 'Je bestelling is nog <strong>niet verzonden</strong> — zodra dat verandert, hoor je het van ons.')}
+    ${traject(order.status || 'betaald')}
     ${gegevensBlok(order)}
     ${regelTabel(order)}
     ${order.montage ? alinea(`<strong>Montage aangevraagd.</strong> We bellen je binnenkort op
@@ -195,6 +258,7 @@ function statusUpdate(order, siteUrl) {
     ${kop(voornaam ? `Update over je bestelling, ${voornaam}` : 'Update over je bestelling')}
     <div style="margin:0 0 16px 0;">${statusBadge(order.status)}</div>
     ${alinea(esc(bericht))}
+    ${order.status === 'geannuleerd' ? '' : traject(order.status)}
     ${gegevensBlok(order)}
     ${alinea(`Bekijk je bestelling op <a href="${esc(siteUrl)}/account" style="color:${K.goudDiep};">je account</a>.`)}`;
 
@@ -271,6 +335,6 @@ async function verstuur({ to, subject, html, replyTo }) {
 }
 
 module.exports = {
-  WINKEL_MAIL, STATUS_TEKST, euro, adresRegel, esc,
+  WINKEL_MAIL, winkelOntvangers, STATUS_TEKST, euro, adresRegel, esc,
   bestelbevestiging, statusUpdate, wachtwoordReset, interneMelding, verstuur,
 };

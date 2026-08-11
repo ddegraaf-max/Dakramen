@@ -106,7 +106,7 @@ async function verwerkBetaling(session, url) {
       adres: klantgegevens.address || {}, regels: regels.map(r => ({
         naam: r.naam, aantal: r.aantal, stuksprijs_cent: r.stuksprijsCent })),
     };
-    await mail.verstuur({ to: mail.WINKEL_MAIL, ...mail.interneMelding(nep, url) });
+    await mail.verstuur({ to: mail.winkelOntvangers(), ...mail.interneMelding(nep, url) });
     return;
   }
 
@@ -155,7 +155,7 @@ async function verwerkBetaling(session, url) {
       ...mail.bestelbevestiging(voorMail, wachtwoordLink, url),
     }),
     mail.verstuur({
-      to: mail.WINKEL_MAIL, replyTo: klant.email,
+      to: mail.winkelOntvangers(), replyTo: klant.email,
       ...mail.interneMelding(voorMail, url),
     }),
   ]);
