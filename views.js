@@ -54,11 +54,10 @@ const STIJL = `
   }
   .wrap { max-width:860px; margin:0 auto; padding:0 22px; }
   .kop .wrap { display:flex; align-items:center; justify-content:space-between; gap:16px; }
-  .merk {
-    font-family:'Fraunces',Georgia,serif; font-size:1.35rem; font-weight:700;
-    letter-spacing:.12em; color:var(--ink); text-decoration:none;
-  }
-  .merk span { color:var(--gold-deep); }
+  /* Zelfde logo en zelfde hoogte als de winkel: 62px beeld + 2×16px padding
+     komt uit op de 94px die de kop van index.html ook heeft. */
+  .merk { display:flex; align-items:center; text-decoration:none; flex:none; }
+  .merk img { height:62px; width:auto; display:block; }
   .kop nav { display:flex; align-items:center; gap:18px; font-size:.92rem; }
   .kop nav a { color:var(--ink-soft); text-decoration:none; }
   .kop nav a:hover { color:var(--ink); }
@@ -168,6 +167,8 @@ const STIJL = `
   .vinkje { display:flex; align-items:center; gap:6px; margin:0; font-size:.86rem; color:var(--ink-soft); }
   .vinkje input { width:auto; }
   @media (max-width:560px) {
+    .kop { padding:12px 0; }
+    .merk img { height:44px; }
     .kop nav { gap:12px; font-size:.85rem; }
     .kaart { padding:20px; }
     .beheer-form select { min-width:0; }
@@ -191,7 +192,11 @@ function schil({ titel, inhoud, klant, beheerder }) {
 <body>
 <header class="kop">
   <div class="wrap">
-    <a class="merk" href="/">LUMA<span>DAK</span></a>
+    <a class="merk" href="/">
+      <!-- Kleine variant van logo.png (14 KB i.p.v. 325 KB); ruim scherp genoeg
+           voor 62px hoogte en wordt ook in de e-mails gebruikt. -->
+      <img src="/logo-email.png" alt="LumaDak — Meer licht. Meer leven.">
+    </a>
     <nav>
       <a href="/">Winkel</a>
       ${klant ? `
