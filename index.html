@@ -104,6 +104,37 @@
   }
   .cart-btn.has-items .cart-count { background: #fff; color: var(--gold); }
 
+  /* ---------- Vlieg-naar-winkelwagen ---------- */
+  .fly-item {
+    position: fixed; z-index: 310;
+    pointer-events: none;
+    border-radius: 14px; overflow: hidden;
+    background: var(--white);
+    box-shadow: 0 16px 36px rgba(31,35,41,.28);
+    will-change: transform, opacity;
+  }
+  .fly-item img, .fly-item svg { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .fly-item .tag { display: none; }
+
+  @keyframes cart-bump {
+    0%   { transform: scale(1); }
+    35%  { transform: scale(1.14); }
+    62%  { transform: scale(.96); }
+    100% { transform: scale(1); }
+  }
+  .cart-btn.bump { animation: cart-bump .45s ease-out; }
+
+  @keyframes count-pop {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.5); }
+    100% { transform: scale(1); }
+  }
+  .cart-count.pop { animation: count-pop .5s cubic-bezier(.34,1.56,.64,1); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cart-btn.bump, .cart-count.pop { animation: none; }
+  }
+
   /* ---------- Hero ---------- */
   .hero {
     position: relative;
@@ -1284,7 +1315,7 @@ function renderGrid() {
                       <div class="cs-name">${cp.name}</div>
                       <div class="cs-price">${euro(cp.price)}${cp.was ? ` <span class="cs-was">${euro(cp.was)}</span>` : ''}</div>
                     </div>
-                    <button class="cs-add" onclick="addToCart(${cp.id})" aria-label="Toevoegen">+</button>
+                    <button class="cs-add" onclick="addToCart(${cp.id}, this)" aria-label="Toevoegen">+</button>
                   </div>
                 `;
               }).join('')}
@@ -1302,7 +1333,7 @@ function renderGrid() {
             <span class="now">${euro(p.price)}</span>
             ${p.was ? `<span class="was">${euro(p.was)}</span>` : ''}
           </div>
-          <button class="add" onclick="addToCart(${p.id})" aria-label="Toevoegen">
+          <button class="add" onclick="addToCart(${p.id}, this)" aria-label="Toevoegen">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           </button>
         </div>
@@ -1312,11 +1343,62 @@ function renderGrid() {
 }
 
 // ---------- Cart logic ----------
-function addToCart(id) {
+function addToCart(id, bron) {
   cart[id] = (cart[id] || 0) + 1;
   updateCart();
   const p = PRODUCTS.find(x => x.id===id);
   showToast(p.name + ' toegevoegd');
+  flyToCart(bron);
+}
+
+// De productfoto vliegt in een boog naar de winkelwagenknop; bij aankomst
+// stuitert de knop en de teller even mee. Puur visueel: als er iets niet
+// lukt (geen foto, knop buiten beeld) blijft toevoegen gewoon werken.
+function flyToCart(bron) {
+  if (!bron) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { bumpCart(); return; }
+
+  const kaart = bron.closest('.cs-item, .card');
+  const thumb = kaart && kaart.querySelector('.thumb, .cs-thumb');
+  const doel = document.getElementById('cartBtn');
+  if (!thumb || !doel) return;
+
+  const van = thumb.getBoundingClientRect();
+  const naar = doel.getBoundingClientRect();
+  if (!van.width || !naar.width) return;
+
+  const klon = document.createElement('div');
+  klon.className = 'fly-item';
+  klon.innerHTML = thumb.innerHTML;
+  klon.style.left = van.left + 'px';
+  klon.style.top = van.top + 'px';
+  klon.style.width = van.width + 'px';
+  klon.style.height = van.height + 'px';
+  document.body.appendChild(klon);
+
+  // van middelpunt thumb naar middelpunt winkelwagenknop
+  const dx = (naar.left + naar.width/2) - (van.left + van.width/2);
+  const dy = (naar.top + naar.height/2) - (van.top + van.height/2);
+
+  const vlucht = klon.animate([
+    { transform: 'translate(0,0) scale(1)', opacity: 1,
+      easing: 'cubic-bezier(.22,.61,.36,1)' },                       // wipt op
+    { transform: `translate(${dx*.55}px, ${dy*.4 - 90}px) scale(.5)`, opacity: .95, offset: .5,
+      easing: 'cubic-bezier(.55,.06,.68,.19)' },                     // valt versneld in
+    { transform: `translate(${dx}px, ${dy}px) scale(.1)`, opacity: .2 },
+  ], { duration: 750, fill: 'forwards' });
+
+  vlucht.onfinish = () => klon.remove();
+  vlucht.oncancel = () => klon.remove();
+  setTimeout(bumpCart, 620);
+}
+
+function bumpCart() {
+  const knop = document.getElementById('cartBtn');
+  const teller = document.getElementById('cartCount');
+  knop.classList.remove('bump'); teller.classList.remove('pop');
+  void knop.offsetWidth;            // forceer herstart bij snel achter elkaar klikken
+  knop.classList.add('bump'); teller.classList.add('pop');
 }
 function changeQty(id, d) {
   cart[id] = (cart[id]||0) + d;
